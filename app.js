@@ -1,49 +1,36 @@
 var express =    require("express"),
     app =        express(),
     bodyparser = require("body-parser"),
-    mongoose =   require("mongoose");
+    mongoose =   require("mongoose"),
+    cityInfo = require("./models/cityinfo"),
+    Comment     = require("./models/comment"),
+    Seeds    = require("./seeds");
     
-
-mongoose.connect("mongodb://localhost/cityinfo");
-
-//City info schema
-var cityinfoSchema = new mongoose.Schema({
+ 
+ 
+ 
+var test = new mongoose.Schema({
     name: String,
     image: String,
-    description: String
+    description: String,
+    comments: [
+        {
+            type: mongoose.Schema.Types.ObjectId,
+            ref: "Comment"
+        }
+    ]
 });
-    
-//database model
-var cityInfo = mongoose.model("cityInfo", cityinfoSchema);
 
-// cityInfo.create({
-//     name: "Griffith Observatory", 
-//     image: "http://griffithobservatory.org/slideshow/slide_show00.jpg",
-//     description: "Griffith Observatory is a facility in Los Angeles, California, sitting on the south-facing slope of Mount Hollywood in Los Angeles' Griffith Park. It commands a view of the Los Angeles Basin, including Downtown Los Angeles to the southeast, Hollywood to the south, and the Pacific Ocean to the southwest. The observatory is a popular tourist attraction with an excellent view of the Hollywood Sign, and an extensive array of space and science-related displays. Since the observatory's opening in 1935, admission has been free, in accordance with the benefactor's will, after whom the observatory is named – Griffith J. Griffith."
-// }, function(err, city){
-//     if(err){
-//         console.log("Error happend");
-//     } else {
-//         console.log("City added successfully");
-//         console.log(city);
-//     }
-// });
 
+
+  
+mongoose.connect("mongodb://localhost/cityinfo");
 app.use(bodyparser.urlencoded({extended: true}));
-
 app.set("view engine", "ejs");
+Seeds(); 
 
 
 
-var info = [
-    {name: "Hollywood Blvd", image: "https://us.123rf.com/450wm/duha127/duha1271201/duha127120100018/12016760-hollywood-sign-in-la.jpg?ver=6"},
-    {name: "Griffith Observatory", image: "http://griffithobservatory.org/slideshow/slide_show00.jpg"},
-    {name: "Santa Monica Pier", image: "http://cdn.c.photoshelter.com/img-get/I00004BMfCdDBCqY/s/500/I00004BMfCdDBCqY.jpg"},
-    {name: "Hollywood Blvd", image: "https://us.123rf.com/450wm/duha127/duha1271201/duha127120100018/12016760-hollywood-sign-in-la.jpg?ver=6"},
-    {name: "Griffith Observatory", image: "http://griffithobservatory.org/slideshow/slide_show00.jpg"},
-    {name: "Santa Monica Pier", image: "http://cdn.c.photoshelter.com/img-get/I00004BMfCdDBCqY/s/500/I00004BMfCdDBCqY.jpg"}
-
-];
 
 
 app.get("/", function(req, res){
@@ -57,10 +44,12 @@ app.get("/cityinfo", function(req, res){
        if(err){
            console.log(err);
        } else {
-            res.render("cityinfo", {info: info}); 
+            res.render("cityinfo/index", {info: info}); 
        }
     });
 });
+
+
 
 
 //CREATE - add a new info to our db
@@ -74,30 +63,83 @@ app.post("/cityinfo", function(req, res){
         if(err){
             console.log(err);
         } else {
-            res.redirect("/cityinfo");
+            res.redirect("cityinfo/index");
         }
     });
 });
+
+
 
 
 //NEW - show form to add a new city info
 app.get("/cityinfo/new", function(req, res){
-   res.render("new.ejs"); 
+   res.render("cityinfo/new"); 
 });
 
 
 
-//SHOW - show info about one city
+
+// SHOW - shows more info about one campground
 app.get("/cityinfo/:id", function(req, res){
-    cityInfo.findById(req.params.id, function(err, cInfo){
+    console.log("Hey hey hey!!!!!!!!!!!!!11");
+
+    //find the campground with provided ID
+    cityInfo.findById(req.params.id).populate("comments").exec(function(err, Info){
         if(err){
+            console.log("You have some error in your code body !!!!!!!!!!!!!11");
             console.log(err);
         } else {
-            var info = cityInfo.find({id: "id"});
-            res.render("show", {info: cInfo})     
+            console.log("I don't know why !!!!!!!!!!!!!!!");
+            //render show template with that campground
+            res.render("cityinfo/show", {Info: Info});
         }
     });
 });
+
+
+// ================
+// Comments Routes
+//=================
+
+app.get("/cityinfo/:id/comments/new", function(req, res){
+    cityInfo.findById(req.params.id, function(err, Info){
+       if(err){
+           console.id(err);
+       } else {
+           res.render("comments/new", {Info: Info});
+       }
+    });
+});
+
+
+
+app.post("/cityinfo/:id/comments", function(req, res){
+    //lookup the city using its ID
+   cityInfo.findById(req.params.id, function(err, Info){
+       if(err){
+           console.log(err);
+           res.redirect("/cityinfo")
+       } else {
+           // Add the new comment to DB
+           Comment.create(req.body.comment, function(err, comment){
+               if(err){
+                   console.log(err);
+               } else {
+                  // Add the new comment to appropriate post
+                  Info.comments.push(comment);
+                  Info.save();
+                  res.redirect('/cityinfo/'+ Info._id);
+               }
+           });
+       }
+   });
+});
+
+
+
+
+
+
 
 app.listen(process.env.PORT, process.env.IP, function(){
    console.log("The city info server has started"); 
