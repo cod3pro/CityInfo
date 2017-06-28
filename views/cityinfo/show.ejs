@@ -1,25 +1,43 @@
 <% include ../partials/header %>
-<h1>Here is the show page</h1>
 
-
-
-<h1><%= Info.name %></h1>
-
-<img src="<%= Info.image %>">
-
-<p><%= Info.description %></p>
-
-<p>
-<a class="btn btn-success" href="/cityinfo/<%= Info._id %>/comments/new">Add new comment</a>
-</p>
-
-<h4>Comments: </h4>
-
-
-<% Info.comments.forEach(function(comment){ %>
-
-    <p><%= comment.author %> - <%= comment.text %></p>
-<% }) %>
-
+<div class="container">
+    <div class="row">
+        <div class="col-md-3">
+            <p class="lead">City Info</p>
+            <div class="list-group">
+                <li class="list-group-item">Item 1</li>
+                <li class="list-group-item">Item 2</li>
+                <li class="list-group-item">Item 3</li>
+            </div>
+        </div>
+        <div class="col-md-9">
+            <div class="thumbnail">
+                <img class="img-responsive" src="<%= Info.image %>">
+                <div class="caption-full">
+                    <h4 class="pull-right">Recommanded Place</h4>
+                    <a><h4><%= Info.name %></h4></a>
+                    <p><%= Info.description %></p>
+                </div>
+            </div>
+            <div class="well">
+                <div class="text-right">
+                    <a class="btn btn-success" href="/cityinfo/<%= Info._id %>/comments/new">Add new comment</a>
+                </div>
+                <hr>
+                <% Info.comments.forEach(function(comment){ %>
+                    <div class="row">
+                        <div class="col-md-12">
+                            <h4>Comments: </h4>
+                            <strong><%= comment.author %></strong>
+                            <p><%= comment.text %></p>
+                        </div>
+                    </div>
+                <% }) %>
+            </div>
+        </div>
+    </div>
+</div>
 
 <% include ../partials/footer %>
+
+

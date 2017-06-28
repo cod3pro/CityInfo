@@ -6,26 +6,14 @@ var express =    require("express"),
     Comment     = require("./models/comment"),
     Seeds    = require("./seeds");
     
- 
- 
- 
-var test = new mongoose.Schema({
-    name: String,
-    image: String,
-    description: String,
-    comments: [
-        {
-            type: mongoose.Schema.Types.ObjectId,
-            ref: "Comment"
-        }
-    ]
-});
-
-
+    
 
   
 mongoose.connect("mongodb://localhost/cityinfo");
 app.use(bodyparser.urlencoded({extended: true}));
+
+app.use(express.static(__dirname+ "/public"));
+
 app.set("view engine", "ejs");
 Seeds(); 
 
