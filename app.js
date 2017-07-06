@@ -4,7 +4,10 @@ var express =    require("express"),
     mongoose =   require("mongoose"),
     cityInfo = require("./models/cityinfo"),
     Comment     = require("./models/comment"),
-    Seeds    = require("./seeds");
+    Seeds    = require("./seeds"),
+    passport = require("passport"),
+    LocalStrategy = require("passport-local"),
+    User = require("./models/user")
     
     
 
@@ -18,6 +21,25 @@ app.set("view engine", "ejs");
 Seeds(); 
 
 
+
+// PASSPORT configuration
+app.use(require("express-session")({
+    secret: "bori",
+    resave: false,
+    saveUninitialized: false
+}));
+
+app.use(passport.initialize());
+app.use(passport.session());
+passport.use(new LocalStrategy(User.authenticate()));
+passport.serializeUser(User.serializeUser());
+passport.deserializeUser(User.deserializeUser());
+
+
+app.use(function(req, res, next){
+   res.locals.currentUser = req.user;
+   next();
+});
 
 
 
@@ -89,7 +111,7 @@ app.get("/cityinfo/:id", function(req, res){
 // Comments Routes
 //=================
 
-app.get("/cityinfo/:id/comments/new", function(req, res){
+app.get("/cityinfo/:id/comments/new", isLoggedIn, function(req, res){
     cityInfo.findById(req.params.id, function(err, Info){
        if(err){
            console.id(err);
@@ -101,7 +123,7 @@ app.get("/cityinfo/:id/comments/new", function(req, res){
 
 
 
-app.post("/cityinfo/:id/comments", function(req, res){
+app.post("/cityinfo/:id/comments", isLoggedIn, function(req, res){
     //lookup the city using its ID
    cityInfo.findById(req.params.id, function(err, Info){
        if(err){
@@ -124,8 +146,61 @@ app.post("/cityinfo/:id/comments", function(req, res){
 });
 
 
+// ===========
+// Auth Routes
+// ===========
+
+// Show register form
+app.get("/register", function(req, res){
+   res.render("register"); 
+});
+
+// Handle sign up logic
+app.post("/register", function(req, res){
+    var newUser = new User({username: req.body.username});
+    User.register(newUser, req.body.password, function(err, user){
+        if(err){
+            console.log(err);
+            return res.render("register");
+        }
+        passport.authenticate("lcoal")(req, res, function(){
+           res.redirect("/cityinfo"); 
+        });
+    });
+});
 
 
+
+// show login page
+app.get("/login", function(req, res){
+   res.render("login"); 
+});
+
+
+//login logic
+app.post("/login", passport.authenticate("local", 
+    {
+        successRedirect: "/cityinfo",
+        failureRedirect: "/login"
+    }), function(req, res){
+    
+});
+
+
+// logout logic
+app.get("/logout", function(req, res){
+   req.logout();
+   res.redirect("/cityinfo");
+});
+
+
+
+function isLoggedIn(req, res, next){
+    if(req.isAuthenticated()){
+        return next();
+    }
+    res.redirect("/login");
+}
 
 
 
